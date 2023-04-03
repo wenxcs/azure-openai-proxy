@@ -77,8 +77,9 @@ type Tokens struct {
 func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		// Set the Host, Scheme, Path, and RawPath of the request to the remote host and path
-		path := req.URL.Path.String()
-		if strings.HasSuffix(path, "completions") || strings.HasSuffix(path, "embeddings") {
+		originURL := req.URL.String()
+		originPath := req.URL.Path.String()
+		if strings.HasSuffix(originPath, "completions") || strings.HasSuffix(originPath, "embeddings") {
 			remote, _ := url.Parse(AzureOpenAIEndpoint)
 			body, _ := ioutil.ReadAll(req.Body)
 			req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
