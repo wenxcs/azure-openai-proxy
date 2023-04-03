@@ -89,7 +89,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if AzureOpenAIToken != "" {
 				token = AzureOpenAIToken
 			} else {
-				token := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
+				token = strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 			}
 
 			req.Header.Set("api-key", token)
@@ -126,7 +126,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if OpenAIToken != "" {
 				token = OpenAIToken
 			} else {
-				token := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
+				token = strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 			}
 
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
