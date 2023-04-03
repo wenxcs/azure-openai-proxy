@@ -111,11 +111,13 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			req.Host = remote.Host
 			req.URL.Scheme = remote.Scheme
 			req.URL.Host = remote.Host
+			rep.URL.Path = remote.Path
 		}  else if strings.HasSuffix(originPath, "credit_grants") {
 			remote, _ := url.Parse(v1_credit_grants)
 			req.Host = remote.Host
 			req.URL.Scheme = remote.Scheme
 			req.URL.Host = remote.Host
+			rep.URL.Path = remote.Path
 		} else {
 			remote, _ := url.Parse("https://api.openai.com")
 			req.Host = remote.Host
