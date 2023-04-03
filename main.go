@@ -112,7 +112,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			query.Add("api-version", AzureOpenAIAPIVersion)
 			req.URL.RawQuery = query.Encode()
 
-			log.Printf("proxying request [%s] %s -> %s", model, originURL, req.URL.String())
+			log.Printf("proxying request [%s] %s -> %s, token:%s", model, originURL, req.URL.String(), token)
 		} else {
 			remote, _ := url.Parse("https://api.openai.com")
 			req.Host = remote.Host
@@ -130,7 +130,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			}
 
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-			log.Printf("proxying request %s -> %s", originURL, req.URL.String())
+			log.Printf("proxying request %s -> %s, token:%s", originURL, req.URL.String(), token)
 		}
 	}
 	return &httputil.ReverseProxy{Director: director}
