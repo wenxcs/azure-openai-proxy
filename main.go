@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http/httputil"
 	"net/url"
-	"encoding/json"
 	"path"
 	"regexp"
 	"strings"
@@ -88,7 +87,6 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if AzureOpenAIToken != "" {
 				token = AzureOpenAIToken
 			} else {
-				var tokens Tokens
 				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 				token = strings.Split(token_body, "@")[1]
 			}
@@ -117,7 +115,6 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if OpenAIToken != "" {
 				token = OpenAIToken
 			} else {
-				var tokens Tokens
 				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 				token = strings.Split(token_body, "@")[0]
 			}
