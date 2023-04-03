@@ -69,11 +69,6 @@ func init() {
 	}
 }
 
-type Tokens struct {
-	azure string `json:"azure"`
-	openai string `json:"openai"`
-}
-
 func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		// Set the Host, Scheme, Path, and RawPath of the request to the remote host and path
@@ -95,9 +90,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			} else {
 				var tokens Tokens
 				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
-				log.Printf("token_body: %s", token_body)
-				json.Unmarshal([]byte(token_body), &tokens)
-				token = tokens.azure
+				token = strings.Split(token_body, "@")[1]
 			}
 
 			req.Header.Set("api-key", token)
@@ -126,9 +119,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			} else {
 				var tokens Tokens
 				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
-				log.Printf("token_body: %s", token_body)
-				json.Unmarshal([]byte(token_body), &tokens)
-				token = tokens.openai
+				token = strings.Split(token_body, "@")[0]
 			}
 
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
