@@ -79,7 +79,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 		// Set the Host, Scheme, Path, and RawPath of the request to the remote host and path
 		originURL := req.URL.String()
 		if strings.HasSuffix(originURL, "completions") || strings.HasSuffix(originURL, "embeddings") {
-			remote, err := url.Parse(AzureOpenAIEndpoint)
+			remote, _ := url.Parse(AzureOpenAIEndpoint)
 			body, _ := ioutil.ReadAll(req.Body)
 			req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 			model := gjson.GetBytes(body, "model").String()
