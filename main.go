@@ -113,11 +113,6 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 
 			log.Printf("proxying request [%s] %s -> %s", model, originURL, req.URL.String())
 		} else {
-			remote, _ := url.Parse("https://api.openai.com")
-			req.Host = remote.Host
-			req.URL.Scheme = remote.Scheme
-			req.URL.Host = remote.Host
-
 			token := ""
 			if OpenAIToken != "" {
 				token = OpenAIToken
