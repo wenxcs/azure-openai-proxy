@@ -27,6 +27,8 @@ var (
 		"gpt-3.5-turbo-0301": "gpt-35-turbo-0301",
 	}
 	fallbackModelMapper = regexp.MustCompile(`[.:]`)
+	v1_models = "https://gist.githubusercontent.com/wenxcs/e1ebd6a38427e707a4e5141195a854d3/raw/models.json"
+	v1_credit_grants = "https://gist.githubusercontent.com/wenxcs/e1ebd6a38427e707a4e5141195a854d3/raw/credit_grants.json"
 )
 
 func init() {
@@ -87,8 +89,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if AzureOpenAIToken != "" {
 				token = AzureOpenAIToken
 			} else {
-				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
-				token = strings.Split(token_body, "@")[1]
+				token := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 			}
 
 			req.Header.Set("api-key", token)
@@ -105,6 +106,20 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			req.URL.RawQuery = query.Encode()
 
 			log.Printf("proxying request [%s] %s -> %s", model, originURL, req.URL.String())
+		} else if strings.HasSuffix(originPath, "models") {
+			remote, _ := url.Parse(v1_models)
+			req.Host = remote.Host
+			req.URL.Scheme = remote.Scheme
+			req.URL.Host = remote.Host
+			req.URL.Path = remote.URL.Path
+			req.URL.RawPath = remote.URL.RawPath
+		}  else if strings.HasSuffix(originPath, "credit_grants") {
+			remote, _ := url.Parse(v1_credit_grants)
+			req.Host = remote.Host
+			req.URL.Scheme = remote.Scheme
+			req.URL.Host = remote.Host
+			req.URL.Path = remote.URL.Path
+			req.URL.RawPath = remote.URL.RawPath
 		} else {
 			remote, _ := url.Parse("https://api.openai.com")
 			req.Host = remote.Host
@@ -115,8 +130,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if OpenAIToken != "" {
 				token = OpenAIToken
 			} else {
-				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
-				token = strings.Split(token_body, "@")[0]
+				token := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 			}
 
 			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
