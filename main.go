@@ -75,10 +75,6 @@ type Tokens struct {
 }
 
 func NewOpenAIReverseProxy() *httputil.ReverseProxy {
-	if err != nil {
-		log.Printf("error parse endpoint: %s\n", AzureOpenAIEndpoint)
-		os.Exit(1)
-	}
 	director := func(req *http.Request) {
 		// Set the Host, Scheme, Path, and RawPath of the request to the remote host and path
 		originURL := req.URL.String()
