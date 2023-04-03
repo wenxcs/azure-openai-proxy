@@ -78,7 +78,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		// Set the Host, Scheme, Path, and RawPath of the request to the remote host and path
 		originURL := req.URL.String()
-		originPath := req.URL.Path.String()
+		originPath := fmt.Sprintf("%s", req.URL.Path)
 		if strings.HasSuffix(originPath, "completions") || strings.HasSuffix(originPath, "embeddings") {
 			remote, _ := url.Parse(AzureOpenAIEndpoint)
 			body, _ := ioutil.ReadAll(req.Body)
