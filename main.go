@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/diemus/azure-openai-proxy/pkg/azure"
-	"github.com/diemus/azure-openai-proxy/pkg/openai"
+	"github.com/wenxcs/azure-openai-proxy/pkg/azure"
+	"github.com/wenxcs/azure-openai-proxy/pkg/openai"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
