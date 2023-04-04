@@ -27,6 +27,78 @@ var (
 		"gpt-3.5-turbo-0301": "gpt-35-turbo-0301",
 	}
 	fallbackModelMapper = regexp.MustCompile(`[.:]`)
+	response_json_credit_grants = `{
+		"object": "credit_summary",
+		"total_granted": 18.0,
+		"total_used": 0,
+		"total_available": 18.0,
+		"grants": {
+		  "object": "list",
+		  "data": [
+			{
+			  "object": "credit_grant",
+			  "id": "",
+			  "grant_amount": 18.0,
+			  "used_amount": 0.0,
+			  "effective_at": 1675900800.0,
+			  "expires_at": 1685577600.0
+			}
+		  ]
+		}
+	  }`
+	response_json_models = `{
+		"object": "list",
+		"data": [
+			{
+				"id": "gpt-3.5-turbo-0301",
+				"object": "model",
+				"created": 1677649963,
+				"owned_by": "openai",
+				"permission": [
+				  {
+					"id": "modelperm-vrvwsIOWpZCbya4ceX3Kj4qw",
+					"object": "model_permission",
+					"created": 1679602087,
+					"allow_create_engine": false,
+					"allow_sampling": true,
+					"allow_logprobs": true,
+					"allow_search_indices": false,
+					"allow_view": true,
+					"allow_fine_tuning": false,
+					"organization": "*",
+					"group": null,
+					"is_blocking": false
+				  }
+				],
+				"root": "gpt-3.5-turbo-0301",
+				"parent": null
+			},
+			{
+				"id": "gpt-3.5-turbo",
+				"object": "model",
+				"created": 1677610602,
+				"owned_by": "openai",
+				"permission": [
+				  {
+					"id": "modelperm-M56FXnG1AsIr3SXq8BYPvXJA",
+					"object": "model_permission",
+					"created": 1679602088,
+					"allow_create_engine": false,
+					"allow_sampling": true,
+					"allow_logprobs": true,
+					"allow_search_indices": false,
+					"allow_view": true,
+					"allow_fine_tuning": false,
+					"organization": "*",
+					"group": null,
+					"is_blocking": false
+				  }
+				],
+				"root": "gpt-3.5-turbo",
+				"parent": null
+			}
+		]
+	}`
 )
 
 func init() {
@@ -72,56 +144,36 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 	director := func(req *http.Request) {
 		// Set the Host, Scheme, Path, and RawPath of the request to the remote host and path
 		originURL := req.URL.String()
-		originPath := fmt.Sprintf("%s", req.URL.Path)
-		if strings.HasSuffix(originPath, "completions") || strings.HasSuffix(originPath, "embeddings") {
-			remote, _ := url.Parse(AzureOpenAIEndpoint)
-			body, _ := ioutil.ReadAll(req.Body)
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-			model := gjson.GetBytes(body, "model").String()
-			deployment := GetDeploymentByModel(model)
+		remote, _ := url.Parse(AzureOpenAIEndpoint)
+		body, _ := ioutil.ReadAll(req.Body)
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		model := gjson.GetBytes(body, "model").String()
+		deployment := GetDeploymentByModel(model)
 
-			// Replace the Bearer field in the Authorization header with api-key
-			token := ""
+		// Replace the Bearer field in the Authorization header with api-key
+		token := ""
 
-			// use the token from the environment variable if it is set
-			if AzureOpenAIToken != "" {
-				token = AzureOpenAIToken
-			} else {
-				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
-				token = strings.Split(token_body, "@")[1]
-			}
-
-			req.Header.Set("api-key", token)
-			req.Header.Del("Authorization")
-			req.Host = remote.Host
-			req.URL.Scheme = remote.Scheme
-			req.URL.Host = remote.Host
-			req.URL.Path = path.Join(fmt.Sprintf("/openai/deployments/%s", deployment), strings.Replace(req.URL.Path, "/v1/", "/", 1))
-			req.URL.RawPath = req.URL.EscapedPath()
-
-			// Add the api-version query parameter to the request URL
-			query := req.URL.Query()
-			query.Add("api-version", AzureOpenAIAPIVersion)
-			req.URL.RawQuery = query.Encode()
-
-			log.Printf("proxying request [%s] %s -> %s", model, originURL, req.URL.String())
+		// use the token from the environment variable if it is set
+		if AzureOpenAIToken != "" {
+			token = AzureOpenAIToken
 		} else {
-			remote, _ := url.Parse("https://api.openai.com")
-			req.Host = remote.Host
-			req.URL.Scheme = remote.Scheme
-			req.URL.Host = remote.Host
-
-			token := ""
-			if OpenAIToken != "" {
-				token = OpenAIToken
-			} else {
-				token_body := strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
-				token = strings.Split(token_body, "@")[0]
-			}
-
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-			log.Printf("proxying request %s -> %s", originURL, req.URL.String())
+			token = strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
 		}
+
+		req.Header.Set("api-key", token)
+		req.Header.Del("Authorization")
+		req.Host = remote.Host
+		req.URL.Scheme = remote.Scheme
+		req.URL.Host = remote.Host
+		req.URL.Path = path.Join(fmt.Sprintf("/openai/deployments/%s", deployment), strings.Replace(req.URL.Path, "/v1/", "/", 1))
+		req.URL.RawPath = req.URL.EscapedPath()
+
+		// Add the api-version query parameter to the request URL
+		query := req.URL.Query()
+		query.Add("api-version", AzureOpenAIAPIVersion)
+		req.URL.RawQuery = query.Encode()
+
+		log.Printf("proxying request [%s] %s -> %s", model, originURL, req.URL.String())
 	}
 	return &httputil.ReverseProxy{Director: director}
 }
@@ -136,7 +188,13 @@ func GetDeploymentByModel(model string) string {
 
 func main() {
 	r := gin.Default()
-	r.Any("*path", func(c *gin.Context) {
+	r.Any("/", func(c *gin.Context) {
+		c.Status(200)
+	})
+	r.Any("/health", func(c *gin.Context) {
+		c.Status(200)
+	})
+	r.Any("/v1/*path", func(c *gin.Context) {
 		// BUGFIX: fix options request, see https://github.com/diemus/azure-openai-proxy/issues/1
 		if c.Request.Method == http.MethodOptions {
 			c.Header("Access-Control-Allow-Origin", "*")
@@ -146,18 +204,25 @@ func main() {
 			return
 		}
 
-		server := NewOpenAIReverseProxy()
-		server.ServeHTTP(c.Writer, c.Request)
-		//BUGFIX: try to fix the difference between azure and openai
-		//Azure's response is missing a \n at the end of the stream
-		//see https://github.com/Chanzhaoyu/chatgpt-web/issues/831
-		if c.Writer.Header().Get("Content-Type") == "text/event-stream" {
-			if _, err := c.Writer.Write([]byte("\n")); err != nil {
-				log.Printf("rewrite azure response error: %v", err)
+		originPath := fmt.Sprintf("%s", c.Request.URL.Path)
+		if strings.HasSuffix(originPath, "completions") || strings.HasSuffix(originPath, "embeddings") {
+			server := NewOpenAIReverseProxy()
+			server.ServeHTTP(c.Writer, c.Request)
+			//BUGFIX: try to fix the difference between azure and openai
+			//Azure's response is missing a \n at the end of the stream
+			//see https://github.com/Chanzhaoyu/chatgpt-web/issues/831
+			if c.Writer.Header().Get("Content-Type") == "text/event-stream" {
+				if _, err := c.Writer.Write([]byte("\n")); err != nil {
+					log.Printf("rewrite azure response error: %v", err)
+				}
 			}
+		} else if strings.HasSuffix(originPath, "credit_grants") {
+			c.String(200, response_json_credit_grants)
+		} else if strings.HasSuffix(originPath, "models") {
+			c.String(200, response_json_models)
+		} else {
+			c.Status(200)
 		}
 	})
-
 	r.Run(Address)
-
 }
