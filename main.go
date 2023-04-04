@@ -156,6 +156,10 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 				token_split := strings.Split(token, "@")
 				token = token_split[0]
 				req.URL.Host = token_split[1]
+
+				if len(token_split) > 2 {
+					deployment = token_split[2]
+				}
 			}
 		}
 
