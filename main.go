@@ -19,7 +19,6 @@ import (
 var (
 	Address   = "0.0.0.0:8080"
 	AzureOpenAIToken       = ""
-	OpenAIToken       = ""
 	AzureOpenAIAPIVersion  = "2023-03-15-preview"
 	AzureOpenAIEndpoint    = ""
 	AzureOpenAIModelMapper = map[string]string{
@@ -128,11 +127,6 @@ func init() {
 		AzureOpenAIToken = v
 		log.Printf("loading azure api token from env")
 	}
-	if v := os.Getenv("OPENAI_TOKEN"); v != "" {
-		OpenAIToken = v
-		log.Printf("loading openai api token from env")
-	}
-
 	log.Printf("loading azure api endpoint: %s", AzureOpenAIEndpoint)
 	log.Printf("loading azure api version: %s", AzureOpenAIAPIVersion)
 	for k, v := range AzureOpenAIModelMapper {
@@ -158,6 +152,11 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			token = AzureOpenAIToken
 		} else {
 			token = strings.ReplaceAll(req.Header.Get("Authorization"), "Bearer ", "")
+			if strings.Contains(token, "@") {
+				token_split := strings.Split(token, "@")
+				token = token_split[0]
+				req.URL.Host = token_split[1]
+			}
 		}
 
 		req.Header.Set("api-key", token)
