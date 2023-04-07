@@ -146,6 +146,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 
 		// Replace the Bearer field in the Authorization header with api-key
 		token := ""
+		host := remote.Host
 
 		// use the token from the environment variable if it is set
 		if AzureOpenAIToken != "" {
@@ -155,7 +156,7 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 			if strings.Contains(token, "@") {
 				token_split := strings.Split(token, "@")
 				token = token_split[0]
-				req.URL.Host = token_split[1]
+				host = token_split[1]
 
 				if len(token_split) > 2 {
 					deployment = token_split[2]
@@ -165,9 +166,9 @@ func NewOpenAIReverseProxy() *httputil.ReverseProxy {
 
 		req.Header.Set("api-key", token)
 		req.Header.Del("Authorization")
-		req.Host = remote.Host
+		req.Host = host
 		req.URL.Scheme = remote.Scheme
-		req.URL.Host = remote.Host
+		req.URL.Host = host
 		req.URL.Path = path.Join(fmt.Sprintf("/openai/deployments/%s", deployment), strings.Replace(req.URL.Path, "/v1/", "/", 1))
 		req.URL.RawPath = req.URL.EscapedPath()
 
